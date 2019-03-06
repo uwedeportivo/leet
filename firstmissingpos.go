@@ -28,7 +28,7 @@ func FirstMissingPositive(nums []int) int {
 		return 1
 	}
 
-	min := 1<<7 - 1
+	min := 1<<31 - 1
 	max := -1
 
 	dedup := make(map[int]bool)
