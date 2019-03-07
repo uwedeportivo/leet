@@ -2,15 +2,81 @@ package leet
 
 import "fmt"
 
-// doesn't work either because final solution is not composition
-// of sub solutions (ie path to previous neighbors is suboptimal
-// but leads to optimal final)
+type subsetIterator struct {
+	n int
+	r int
+	cur []int
+}
 
-const (
-	infinity = 1 << 31 - 1
-)
+func createSubsetIterator(n, r int) *subsetIterator {
+	first := make([]int, r)
 
-func from(hp, ap, cell int) (int, int) {
+	for i:=0; i < r; i++ {
+		first[i] = i+1
+	}
+	return &subsetIterator{
+		n:n,
+		r:r,
+		cur:first,
+	}
+}
+
+func (si *subsetIterator) current(buf []int) {
+	copy(buf, si.cur)
+}
+
+func (si *subsetIterator) next() bool {
+	l := -1
+	for k := 0; k < si.r; k++ {
+		if si.cur[k] < si.n - si.r + k + 1 {
+			l = k
+		}
+	}
+	if l == -1 {
+		return false
+	}
+
+	c := si.cur[l]
+	for i := l; i < si.r; i++ {
+		si.cur[i] = c + i - l + 1
+	}
+	return true
+}
+
+
+type pathIterator struct {
+	m int
+	n int
+	si *subsetIterator
+	subsetBuf []int
+}
+
+func createPathIterator(m, n int) *pathIterator {
+	return &pathIterator{
+		m:m,
+		n:n,
+		si:createSubsetIterator(m+n, m),
+		subsetBuf:make([]int, m),
+	}
+}
+
+func (pi *pathIterator) current(buf []byte) {
+	pi.si.current(pi.subsetBuf)
+
+	for i := 0; i < len(buf); i++ {
+		buf[i] = 0
+	}
+
+	for j := 0; j < pi.m; j++ {
+		buf[pi.subsetBuf[j]-1] = 1
+	}
+}
+
+func (pi *pathIterator) next() bool {
+	return pi.si.next()
+}
+
+func move(hp, ap, cell int) (int, int) {
 	if cell >= 0 {
 		return hp, ap + cell
 	}
@@ -22,36 +88,11 @@ func from(hp, ap, cell int) (int, int) {
 	return hp + delta, 0
 }
 
-func minHP(dungeon, hp, ap [][]int, i, j int) (int, int) {
-	if hp[i][j] > -infinity {
-		return hp[i][j], ap[i][j]
+func needed(h int) int {
+	if h > 0 {
+		return 1
 	}
-
-	nhp := -infinity
-	nap := 0
-	if i > 0 {
-		nhp, nap = minHP(dungeon, hp, ap, i-1, j)
-		nhp, nap = from(nhp, nap, dungeon[i][j])
-	}
-	whp := -infinity
-	wap := 0
-	if j > 0 {
-		whp, wap = minHP(dungeon, hp, ap, i, j-1)
-		whp, wap = from(whp, wap, dungeon[i][j])
-	}
-
-	if i == 2 && j == 2 {
-		fmt.Println("boo")
-	}
-
-	if nhp > whp {
-		hp[i][j] = nhp
-		ap[i][j] = nap
-	} else {
-		hp[i][j] = whp
-		ap[i][j] = wap
-	}
-	return hp[i][j], ap[i][j]
+	return -h + 1
 }
 
 func CalculateMinimumHP(dungeon [][]int) int {
@@ -62,31 +103,41 @@ func CalculateMinimumHP(dungeon [][]int) int {
 	m := len(dungeon)
 	n := len(dungeon[0])
 
-	hp := make([][]int, m)
-	ap := make([][]int, m)
+	pi := createPathIterator(m-1, n-1)
 
-	for i := 0; i < m;i++ {
-		hp[i] = make([]int, n)
-		ap[i] = make([]int, n)
-		for j := 0; j < n; j++ {
-			hp[i][j] = -infinity
+	buf := make([]byte, m+n-2)
+
+	minNeeds := 1 << 31 -1
+
+	for {
+		x, y := 0, 0
+		hp, ap := move(0, 0, dungeon[x][y])
+		pi.current(buf)
+
+		for _, b := range buf {
+			if b == 1 {
+				x = x + 1
+			} else {
+				y = y + 1
+			}
+
+			if x >= len(dungeon) || y >= len(dungeon[x]) {
+				fmt.Println("boom")
+			}
+			hp, ap = move(hp, ap, dungeon[x][y])
+		}
+
+		needs := needed(hp)
+		if needs < minNeeds {
+			minNeeds = needs
+		}
+
+		if !pi.next() {
+			break
 		}
 	}
 
-	if dungeon[0][0] >= 0 {
-		hp[0][0] = 0
-		ap[0][0] = dungeon[0][0]
-	} else {
-		hp[0][0] = dungeon[0][0]
-		ap[0][0] = 0
-	}
-
-	h, _ :=  minHP(dungeon, hp, ap, m -1, n-1)
-
-	if h > 0 {
-		return 1
-	}
-	return -h + 1
+	return minNeeds
 }
 
 
