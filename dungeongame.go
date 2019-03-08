@@ -1,6 +1,41 @@
 package leet
 
 // https://twitter.com/shachaf clued me in
+// here's his more elegant code:
+//func calculateMinimumHP(dungeon [][]int) int {
+//	rows := len(dungeon)
+//	cols := len(dungeon[0])
+//
+//	// Could use dungeon in place; could store only one row/column at a time or something.
+//	costs := make([][]int, rows)
+//	for r := 0; r < rows; r++ {
+//		costs[r] = make([]int, cols)
+//	}
+//
+//	for r := rows - 1; r >= 0; r-- {
+//		for c := cols - 1; c >= 0; c-- {
+//			minToExit := math.MaxInt32
+//			if r == rows-1 && c == cols-1 {
+//				minToExit = 1
+//			}
+//			if r < rows-1 && costs[r+1][c] < minToExit {
+//				minToExit = costs[r+1][c]
+//			}
+//			if c < cols-1 && costs[r][c+1] < minToExit {
+//				minToExit = costs[r][c+1]
+//			}
+//
+//			minToEnter := minToExit - dungeon[r][c]
+//			if minToEnter < 1 {
+//				minToEnter = 1
+//			}
+//
+//			costs[r][c] = minToEnter
+//		}
+//	}
+//
+//	return costs[0][0]
+//}
 
 const (
 	infinity = 1 << 31 -1
