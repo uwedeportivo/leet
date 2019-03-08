@@ -8,20 +8,6 @@ import (
 	"text/scanner"
 )
 
-func TestSubsetIterator(t *testing.T) {
-	buf := make([]int, 4)
-
-	si := createSubsetIterator(6, 4)
-
-	for {
-		si.current(buf)
-		t.Logf("%v\n", buf)
-		if !si.next() {
-			break
-		}
-	}
-}
-
 func TestCalculateMinimumHP(t *testing.T) {
 	nums := [][]int{{-2,-3,3},{-5,-10,1},{10,30,-5}}
 	expected := 7
@@ -78,7 +64,7 @@ func TestCalculateMinimumHP(t *testing.T) {
 		}
 	}
 
-	expected = 3
+	expected = 85
 
 	res = CalculateMinimumHP(nums)
 

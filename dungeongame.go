@@ -1,98 +1,63 @@
 package leet
 
-import "fmt"
+// https://twitter.com/shachaf clued me in
 
-type subsetIterator struct {
-	n int
-	r int
-	cur []int
+const (
+	infinity = 1 << 31 -1
+)
+type board [][]int
+
+func (bd board) at(x, y int) int {
+	m := len(bd)
+	n := len(bd[0])
+
+	return bd[m - 1 - x][n - 1 - y]
 }
 
-func createSubsetIterator(n, r int) *subsetIterator {
-	first := make([]int, r)
-
-	for i:=0; i < r; i++ {
-		first[i] = i+1
+func min(a, b int) int {
+	if a < b {
+		return a
 	}
-	return &subsetIterator{
-		n:n,
-		r:r,
-		cur:first,
-	}
+	return b
 }
 
-func (si *subsetIterator) current(buf []int) {
-	copy(buf, si.cur)
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
-func (si *subsetIterator) next() bool {
-	l := -1
-	for k := 0; k < si.r; k++ {
-		if si.cur[k] < si.n - si.r + k + 1 {
-			l = k
-		}
-	}
-	if l == -1 {
-		return false
+func calcMinImpl(bd board, hp [][]int, x, y int) int {
+	if hp[x][y] < infinity {
+		return hp[x][y]
 	}
 
-	c := si.cur[l]
-	for i := l; i < si.r; i++ {
-		si.cur[i] = c + i - l + 1
-	}
-	return true
-}
-
-
-type pathIterator struct {
-	m int
-	n int
-	si *subsetIterator
-	subsetBuf []int
-}
-
-func createPathIterator(m, n int) *pathIterator {
-	return &pathIterator{
-		m:m,
-		n:n,
-		si:createSubsetIterator(m+n, m),
-		subsetBuf:make([]int, m),
-	}
-}
-
-func (pi *pathIterator) current(buf []byte) {
-	pi.si.current(pi.subsetBuf)
-
-	for i := 0; i < len(buf); i++ {
-		buf[i] = 0
+	toSouth := infinity
+	if x > 0 {
+		toSouth = calcMinImpl(bd, hp, x-1, y)
 	}
 
-	for j := 0; j < pi.m; j++ {
-		buf[pi.subsetBuf[j]-1] = 1
-	}
-}
-
-func (pi *pathIterator) next() bool {
-	return pi.si.next()
-}
-
-func move(hp, ap, cell int) (int, int) {
-	if cell >= 0 {
-		return hp, ap + cell
+	toEast := infinity
+	if y > 0 {
+		toEast = calcMinImpl(bd, hp, x, y-1)
 	}
 
-	delta := ap + cell
-	if delta >= 0 {
-		return hp, delta
+	finishing := min(toSouth, toEast)
+	if bd.at(x, y) > 0 {
+		finishing = max(0, finishing - bd.at(x, y))
 	}
-	return hp + delta, 0
-}
 
-func needed(h int) int {
-	if h > 0 {
-		return 1
+	cost := finishing
+	if bd.at(x, y) < 0 {
+		cost += -bd.at(x, y)
+	} else if finishing == 0 {
+		cost = 1
 	}
-	return -h + 1
+
+	hp[x][y] = cost
+
+	return hp[x][y]
 }
 
 func CalculateMinimumHP(dungeon [][]int) int {
@@ -103,41 +68,22 @@ func CalculateMinimumHP(dungeon [][]int) int {
 	m := len(dungeon)
 	n := len(dungeon[0])
 
-	pi := createPathIterator(m-1, n-1)
-
-	buf := make([]byte, m+n-2)
-
-	minNeeds := 1 << 31 -1
-
-	for {
-		x, y := 0, 0
-		hp, ap := move(0, 0, dungeon[x][y])
-		pi.current(buf)
-
-		for _, b := range buf {
-			if b == 1 {
-				x = x + 1
-			} else {
-				y = y + 1
-			}
-
-			if x >= len(dungeon) || y >= len(dungeon[x]) {
-				fmt.Println("boom")
-			}
-			hp, ap = move(hp, ap, dungeon[x][y])
-		}
-
-		needs := needed(hp)
-		if needs < minNeeds {
-			minNeeds = needs
-		}
-
-		if !pi.next() {
-			break
+	hp := make([][]int, m)
+	for i := 0; i < m; i++ {
+		hp[i] = make([]int, n)
+		for j := 0; j < n;j++{
+			hp[i][j] = infinity
 		}
 	}
 
-	return minNeeds
+	bd := board(dungeon)
+
+	hp[0][0] = 1
+	if bd.at(0, 0) < 0 {
+		hp[0][0] = -bd.at(0, 0) + 1
+	}
+
+	return calcMinImpl(bd, hp, m-1, n-1)
 }
 
 
