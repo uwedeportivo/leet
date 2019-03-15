@@ -1,5 +1,7 @@
 package leet
 
+// https://www.youtube.com/watch?v=oDhu5uGq_ic
+
 // Removes adjacent duplicates
 func delAdjacentDuplcates(xs []int) []int {
 	if len(xs) == 0 {
@@ -94,85 +96,6 @@ func trimDecreasingSuffix(xs []int) []int {
 	return ys
 }
 
-// Returns profit from the best single transaction
-// within start and end by visiting all possible
-// buys and sells pairings.
-func bestTransaction(xs []int, start, end int) int {
-	if start == end || start == end - 1 {
-		return 0
-	}
-
-	mp := -1
-	for i := start; i < end; i+=2 {
-		for j := i+1; j < end; j+=2 {
-			if xs[i] < xs[j] {
-				p := xs[j] - xs[i]
-				if p > mp {
-					mp = p
-				}
-			}
-		}
-	}
-	return mp
-}
-
-func maxProfitImpl(k int, xs []int, start, end int, profits [][][]int) int {
-	if k == 0 {
-		profits[start][end][k] = 0
-		return 0
-	}
-	if start == end {
-		profits[start][end][k] = 0
-		return 0
-	}
-	if end - start == 2 {
-		profits[start][end][k] = xs[end-1]-xs[start]
-		return xs[end-1]-xs[start]
-	}
-
-	if profits[start][end][k] >= 0 {
-		return profits[start][end][k]
-	}
-
-	if k >= (end - start) / 2 {
-		sum := 0
-		for i := start; i < end; i+=2 {
-			sum += xs[i+1] - xs[i]
-		}
-		profits[start][end][k] = sum
-		return sum
-	}
-
-	bt := bestTransaction(xs, start, end)
-	if k == 1 {
-		profits[start][end][k] = bt
-		return bt
-	}
-
-	mp := -1
-
-	for i := start+2; i < end; i+=2 {
-		pl := xs[i-1] - xs[start]
-		pr := maxProfitImpl(k-1, xs, i, end, profits)
-
-		if mp < pl + pr {
-			mp = pl + pr
-		}
-	}
-
-	pp := maxProfitImpl(k, xs, start+2, end, profits)
-	if mp < pp {
-		mp = pp
-	}
-
-	pp = maxProfitImpl(k-1, xs, start, end, profits)
-	if mp < pp {
-		mp = pp
-	}
-
-	profits[start][end][k] = mp
-	return mp
-}
 
 func MaxProfit(maxNumTransactions int, prices []int) int {
 	if maxNumTransactions == 0 {
@@ -197,18 +120,23 @@ func MaxProfit(maxNumTransactions int, prices []int) int {
 		}
 		return sum
 	}
+	
+	profits := make([][]int, len(xs))
+	for i := 0; i < len(profits); i++ {
+		profits[i] = make([]int, maxNumTransactions+1)
+	}
 
-	profits := make([][][]int, len(xs))
-	for i := 0; i < len(xs); i++ {
-		profits[i] = make([][]int, len(xs) + 1)
+	for numT := 1; numT <= maxNumTransactions; numT++ {
+		maxDiff := -xs[0]
 
-		for j := 0; j < len(profits[i]); j++ {
-			profits[i][j] = make([]int, maxNumTransactions + 1)
-			for k := 0; k < len(profits[i][j]); k++ {
-				profits[i][j][k] = -1
-			}
+		for day := 1; day < len(xs); day++ {
+			ifIDoNothing := profits[day-1][numT]
+			ifISell := xs[day] + maxDiff
+			maxDiff = max(maxDiff, profits[day][numT-1] - xs[day])
+
+			profits[day][numT] = max(ifIDoNothing, ifISell)
 		}
 	}
 
-	return maxProfitImpl(maxNumTransactions, xs, 0, len(xs), profits)
+	return profits[len(xs)-1][maxNumTransactions]
 }
