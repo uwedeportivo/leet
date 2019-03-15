@@ -120,7 +120,7 @@ func MaxProfit(maxNumTransactions int, prices []int) int {
 		}
 		return sum
 	}
-	
+
 	profits := make([][]int, len(xs))
 	for i := 0; i < len(profits); i++ {
 		profits[i] = make([]int, maxNumTransactions+1)
