@@ -1,37 +1,65 @@
 package leet
 
+import "sort"
+
 type TreeNode struct {
 	Val   int64
 	Left  *TreeNode
 	Right *TreeNode
 }
 
-func findSwap(node *TreeNode, validMin, validMax int64, pa, pb **TreeNode) {
-	found := false
-	if node.Val < validMin || node.Val > validMax {
-		found = true
-		if *pa == nil {
-			*pa = node
-		} else {
-			*pb = node
-			return
-		}
+func at(node *TreeNode, index int) *TreeNode {
+	if index < 0 {
+		return nil
+	}
+	leftCount := 0
+	if node.Left != nil {
+		leftCount = count(node.Left)
+	}
+	if index < leftCount {
+		return at(node.Left, index)
+	}
+	if index == leftCount {
+		return node
 	}
 
+	if node.Right == nil {
+		return nil
+	}
+
+	return at(node.Right, index - leftCount - 1)
+}
+
+func count(node *TreeNode) int {
+	leftCount := 0
 	if node.Left != nil {
-		rangeEdge := node.Val
-		if found {
-			rangeEdge = validMax
-		}
-		findSwap(node.Left, validMin, rangeEdge, pa, pb)
+		leftCount = count(node.Left)
 	}
+	rightCount := 0
 	if node.Right != nil {
-		rangeEdge := node.Val
-		if found {
-			rangeEdge = validMin
-		}
-		findSwap(node.Right, rangeEdge, validMax, pa, pb)
+		rightCount = count(node.Right)
 	}
+	return leftCount + rightCount + 1
+}
+
+type treeNodesByVal struct {
+	root *TreeNode
+}
+
+func (a *treeNodesByVal) Len() int           { return count(a.root) }
+
+func (a *treeNodesByVal) Swap(i, j int) {
+	iNode := at(a.root, i)
+	jNode := at(a.root, j)
+
+	iNode.Val, jNode.Val = jNode.Val, iNode.Val
+}
+
+func (a *treeNodesByVal) Less(i, j int) bool {
+	iNode := at(a.root, i)
+	jNode := at(a.root, j)
+
+	return iNode.Val < jNode.Val
 }
 
 func RecoverTree(root *TreeNode) {
@@ -39,17 +67,8 @@ func RecoverTree(root *TreeNode) {
 		return
 	}
 
-	var nodeA, nodeB *TreeNode
-
-	findSwap(root, -infinity, infinity, &nodeA, &nodeB)
-
-	if nodeA == nil {
-		nodeA = root
+	a := &treeNodesByVal{
+		root:root,
 	}
-
-	if nodeB == nil {
-		nodeB = root
-	}
-
-	nodeA.Val, nodeB.Val = nodeB.Val, nodeA.Val
+	sort.Sort(a)
 }
